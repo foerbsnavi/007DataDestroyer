@@ -18,14 +18,14 @@ _außer_ der grüne Recovery-Knopf wird rechtzeitig gedrückt.
 
 ```
         ┌─────────────────────┐        drückt PIN + grünen Knopf
-        │   recover.php  🟢    │  ◀───────────────────────────────  du
-        │  (öffentlich, PIN)   │        im Zeitfenster
+        │   recover.php  🟢   │  ◀───────────────────────────────  du
+        │  (öffentlich, PIN)  │        im Zeitfenster
         └──────────┬──────────┘
                    │ bestätigt Fenster
                    ▼
    ┌───────────────────────────┐        Fenster verpasst?
-   │   cron.php  (Wächter)  ⏱   │ ─────────────────────────────▶  💥  data/ wird
-   │   + Lazy-Check-Fallback    │        keine Bestätigung          restlos gelöscht
+   │   cron.php  (Wächter)  ⏱  │ ─────────────────────────────▶  💥  data/ wird
+   │   + Lazy-Check-Fallback   │        keine Bestätigung          restlos gelöscht
    └───────────────────────────┘
 ```
 
