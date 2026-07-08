@@ -1,0 +1,236 @@
+================================================================================
+007DATADESTROYER – VOLLSTÄNDIGE FUNKTIONSLISTE
+Stand: 2026-07-08
+================================================================================
+
+007DataDestroyer ist ein "Dead Man's Switch" für ein Web-Verzeichnis: Ein
+passwortgeschütztes Backend legt Zeitfenster fest, in denen ein Betreiber per
+grünem Knopf auf einer öffentlichen Seite seine Anwesenheit bestätigen muss.
+Bleibt die Bestätigung aus, löscht das System automatisch und restlos den
+Inhalt eines festgelegten Datenordners. Reines PHP, lauffähig auf einfachem
+Shared-Hosting (Apache), kein Node.js nötig.
+
+================================================================================
+1. BACKEND-EINSTELLUNGEN (passwortgeschützt, /admin/)
+================================================================================
+
+1.1  ERSTEINRICHTUNG (SETUP-WIZARD)
+     - Läuft automatisch, solange noch kein Admin-Passwort gesetzt ist
+     - Fragt Admin-Passwort (min. 8 Zeichen, zweimal), Recovery-PIN
+       (6-10 Ziffern, zweimal) und Zeitzone ab
+     - Erzeugt automatisch ein geheimes Cron-Token
+     - Keine Default-Zugangsdaten — ohne Setup ist das System nicht nutzbar
+
+1.2  ZEITPLAN-EINSTELLUNGEN
+     - Modus wählbar: einmalig, stündlich, täglich, wöchentlich
+     - Zeitfenster frei einstellbar ("zwischen HH:MM und HH:MM Uhr"),
+       funktioniert auch über Mitternacht/Stundengrenze hinweg
+     - Bei "einmalig": zusätzliches Datum
+     - Bei "wöchentlich": zusätzlicher Wochentag (Mo-So)
+     - Datenverzeichnis frei wählbar (Standard "data"), relativ zum Webroot
+     - Zeitzone einstellbar (Standard Europe/Berlin)
+     - Formularfelder blenden sich je nach gewähltem Modus dynamisch ein/aus
+
+1.3  SCHARF-/ENTSCHÄRF-SCHALTER
+     - "Scharf schalten" aktiviert die Überwachung (mit Sicherheitsabfrage)
+     - Nur möglich, wenn das Datenverzeichnis gültig ist
+     - "Entschärfen" deaktiviert die Überwachung sofort, es wird nichts gelöscht
+     - Einstellbar: Nach einer erfolgten Löschung automatisch entschärfen
+       oder scharf bleiben (Standard: scharf bleiben / zyklischer Weiterbetrieb)
+
+1.4  DASHBOARD / STATUS-ANZEIGE
+     - Aktueller Zustand: SCHARF / INAKTIV
+     - Klartext-Beschreibung des aktiven Zeitplans
+     - Datenverzeichnis mit Datei-Anzahl und Größe (gecachte Anzeige)
+     - Aktuelles Fenster (offen bis wann) bzw. nächstes Fenster (Beginn/Ende)
+     - Zeitpunkt der letzten Bestätigung und der letzten Löschung
+     - Cron-Aufruf-URL (mit Token) und Link zur öffentlichen Recovery-Seite
+       zum Kopieren
+
+1.5  PROTOKOLL
+     - Chronologische Ereignisliste im Dashboard (neueste zuerst, bis 40 sichtbar)
+     - Erfasst: Einrichtung, Scharf-/Entschärf-Vorgänge, Bestätigungen,
+       Löschungen, Fehler, Passwort-/PIN-Änderungen
+     - Zusätzlich persistentes Textlog (destroyer.log) im gesperrten storage-Ordner
+
+1.6  ZUGANGSDATEN ÄNDERN
+     - Admin-Passwort ändern (verlangt aktuelles Passwort)
+     - Recovery-PIN ändern (verlangt Admin-Passwort zur Bestätigung)
+
+================================================================================
+2. ÖFFENTLICHE RECOVERY-SEITE (recover.php)
+================================================================================
+
+2.1  GRÜNER RECOVERY-KNOPF
+     - Groß, rund, mittig, responsive, per Tastatur bedienbar (echtes <button>,
+       ARIA-Label, ausreichender Kontrast)
+     - Zusätzlich durch eine PIN-Eingabe geschützt (Pflichtfeld)
+     - Kann eine Löschung ausschließlich VERHINDERN, niemals auslösen
+
+2.2  LIVE-STATUSANZEIGE
+     - Zeigt an, ob gerade ein Fenster offen ist ("JETZT offen") oder wann das
+       nächste Fenster beginnt
+     - Laufender Countdown (Sekunden/Minuten/Stunden/Tage) auf Basis der
+       Serverzeit, unabhängig von einer falsch gestellten Client-Uhr
+     - Seite lädt sich automatisch neu, sobald ein Fenster öffnet/schließt
+
+2.3  BESTÄTIGUNGS-LOGIK
+     - Klick im offenen Fenster mit korrekter PIN → Fenster gilt als bestätigt,
+       Erfolgsmeldung
+     - Klick außerhalb eines Fensters → Hinweis, dass die Bestätigung aktuell
+       nicht nötig/wirksam ist
+     - Falsche PIN → Fehlermeldung, kein Bestätigungseffekt
+
+================================================================================
+3. WÄCHTER / LÖSCHLOGIK
+================================================================================
+
+3.1  CRON-WÄCHTER (cron.php)
+     - Für regelmäßigen Aufruf per Cronjob gedacht (empfohlen minütlich)
+     - Aufruf per HTTP nur mit gültigem geheimem Token, Aufruf per CLI ohne Token
+     - Ermittelt bei jedem Lauf alle seit dem letzten Lauf abgelaufenen
+       Zeitfenster und prüft, ob sie bestätigt wurden
+
+3.2  LAZY-CHECK (Cron-Fallback)
+     - Läuft automatisch und gedrosselt (max. alle 20 Sekunden) bei jedem
+       Aufruf von recover.php oder dem Backend
+     - Stellt sicher, dass Löschungen auch ohne funktionierenden Cronjob
+       zeitnah erkannt werden
+
+3.3  LÖSCHENTSCHEIDUNG
+     - Fehlt für ein abgelaufenes Fenster eine Bestätigung → sofortige Löschung
+     - Ereignis wird protokolliert, optional E-Mail-Versand
+     - Je nach Einstellung bleibt das System danach scharf oder deaktiviert sich
+
+3.4  RESTLOSE LÖSCHUNG MIT PFAD-ABSICHERUNG
+     - Löscht rekursiv alle Dateien und Unterordner im konfigurierten
+       Datenverzeichnis, der Ordner selbst bleibt bestehen
+     - Optionales Überschreiben jeder Datei mit Zufallsdaten vor dem Löschen
+       (best-effort "sicheres Löschen", einstellbar)
+     - Strenge Pfadprüfung vor jeder Löschung: Zielpfad muss echtes
+       Unterverzeichnis des Webroots sein, kein Path-Traversal ("..", absolute
+       Pfade), kein Ausbruch über Symlinks, System-/App-Ordner
+       (storage, lib, admin, assets) sind grundsätzlich ausgeschlossen
+     - Schutzdatei (.htaccess) im Datenordner bleibt auch nach Löschung erhalten
+
+3.5  PROBE-/TESTFUNKTION
+     - Datenverzeichnis-Kennzahlen (Dateianzahl, Größe) werden im Dashboard
+       angezeigt, kurzzeitig gecacht, um wiederholtes Scannen zu vermeiden
+
+================================================================================
+4. SICHERHEIT
+================================================================================
+
+4.1  BACKEND-ANMELDUNG
+     - Session-basiertes Login mit bcrypt-gehashtem Admin-Passwort
+     - Session-Cookies: HttpOnly, SameSite=Strict, secure bei HTTPS
+     - Automatischer Logout nach 60 Minuten Inaktivität oder spätestens
+       nach 12 Stunden Sitzungsdauer
+
+4.2  CSRF-SCHUTZ
+     - Alle Formulare (Login, Setup, Einstellungen, Recovery-Bestätigung)
+       verlangen ein gültiges, sitzungsgebundenes CSRF-Token
+
+4.3  RATE-LIMITING / BRUTE-FORCE-SCHUTZ
+     - Fehlversuche pro Kontext (Login, Recovery-PIN) und IP-Adresse werden
+       gezählt; ab 5 Fehlversuchen 15 Minuten Sperre
+     - Zusätzliche künstliche Verzögerung bei Fehlversuchen
+     - Kein globales PIN-Limit (bewusst, um Missbrauch zur Aussperrung des
+       legitimen Bestätigers zu verhindern)
+
+4.4  RECOVERY-PIN
+     - Separater bcrypt-gehashter PIN-Schutz (6-10 Ziffern) zusätzlich zum
+       öffentlichen Knopf, unabhängig vom Admin-Passwort
+
+4.5  VERZEICHNISSCHUTZ (.htaccess)
+     - storage/ (Konfiguration, Zustand, Logs): komplett gesperrt
+     - lib/ (PHP-Klassen): komplett gesperrt
+     - data/: standardmäßig gesperrt (Löschziel soll nicht ausgeliefert werden)
+     - assets/: langlebiges Browser-Caching für CSS/JS
+
+4.6  ÜBRIGE MASSNAHMEN
+     - Alle Ausgaben HTML-escaped (XSS-Schutz)
+     - Zufalls-Token kryptografisch sicher erzeugt
+     - Cron-Endpoint per Web nur mit geheimem Token aufrufbar
+     - Fehlerausgabe im Browser deaktiviert, Fehler landen in gesperrtem
+       php_error.log
+     - Backend-Seiten mit "no-store"-Cache-Header, alle Backend-/Recovery-
+       Seiten mit "noindex, nofollow" und robots.txt-Sperre für die ganze App
+
+================================================================================
+5. E-MAIL-BENACHRICHTIGUNG
+================================================================================
+
+5.1  OPTIONALE BENACHRICHTIGUNG
+     - E-Mail-Adresse im Backend hinterlegbar (leer = deaktiviert)
+     - Versand bei erfolgter Löschung mit Angabe des verpassten Fensters,
+       Dateianzahl, Datenmenge und Zeitpunkt
+     - Versand bei fehlgeschlagener Löschung, damit ein Fehlversuch nicht
+       unbemerkt bleibt
+
+================================================================================
+6. TECHNISCHE BAUSTEINE / ASSETS
+================================================================================
+
+6.1  DATENHALTUNG
+     - Konfiguration (config.json) und Laufzeitzustand (state.json) als JSON,
+       atomar geschrieben (Sperren, temporäre Datei + Umbenennen)
+     - Zustand enthält bestätigte Fenster, Zeitstempel, Rate-Limit-Buckets
+       und das Ereignisprotokoll
+
+6.2  OBERFLÄCHE / DESIGN
+     - Dunkles 007-/Agenten-Thema ("Selbstzerstörung"-Ästhetik) mit grünem
+       Recovery-Knopf als Kontrastfarbe
+     - Eigenständiges Stylesheet (style.css) für Recovery- und Backend-Seiten
+     - Zwei schlanke JavaScript-Dateien: Live-Countdown auf der Recovery-Seite,
+       dynamische Formularfelder im Backend
+     - Barrierefreiheit: sr-only-Texte, ARIA-Labels, Statusmeldungen mit
+       role="status"/"alert"
+
+6.3  EINSTIEGSPUNKT
+     - index.php leitet automatisch auf die öffentliche Recovery-Seite weiter
+
+================================================================================
+7. GITHUB-VERÖFFENTLICHUNG
+================================================================================
+
+7.1  README.md
+     - Warnhinweis zur unwiderruflichen Löschung, Funktionsprinzip,
+       Funktionsübersicht, Installationsanleitung, Cronjob-Einrichtung,
+       Bedienungshinweise, Sicherheitsabschnitt, Grenzen des "sicheren
+       Löschens", Projektstruktur
+
+7.2  LICENSE
+     - MIT-Lizenz
+
+7.3  .gitignore
+     - Schließt Laufzeit-Zustand (config.json, state.json, Logs) und die
+       echten Nutzdaten im data-Ordner von der Versionierung aus
+     - Schutzdateien (.htaccess, .gitkeep) bleiben erhalten
+
+7.4  config.sample.json
+     - Dokumentiert alle Konfigurationsfelder als Vorlage, ohne echte
+       Zugangsdaten
+
+================================================================================
+ZUSAMMENFASSUNG: FUNKTIONSBEREICHE ZUM TESTEN
+================================================================================
+
+ A  Setup-Wizard (Erstinstallation)
+ B  Backend-Login inkl. Rate-Limit und Session-Timeout
+ C  Einstellungen: alle vier Modi (einmalig/stündlich/täglich/wöchentlich)
+ D  Scharf-/Entschärf-Schalter und Zustand nach Löschung
+ E  Recovery-Seite: PIN-Prüfung, Knopf, Countdown, Bestätigung im/außerhalb
+    des Fensters
+ F  Cron-Wächter (cron.php) mit und ohne gültigem Token
+ G  Lazy-Check als Cron-Fallback
+ H  Löschlogik: restlose Löschung, Pfad-Absicherung, optionales Überschreiben
+ I  E-Mail-Benachrichtigung bei Löschung/Fehler
+ J  Protokoll-Anzeige im Dashboard
+ K  Passwort-/PIN-Änderung
+ L  .htaccess-Schutz von storage/, lib/, data/
+ M  GitHub-Dateien (README, LICENSE, .gitignore, config.sample.json)
+
+================================================================================
+Ende der Funktionsliste
+================================================================================

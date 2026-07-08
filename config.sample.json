@@ -1,0 +1,18 @@
+{
+  "_hinweis": "Beispiel-Konfiguration. Die echte config.json wird beim Setup unter public/storage/ erzeugt und ist NICHT im Repository. Diese Datei dient nur zur Dokumentation der Felder.",
+
+  "mode": "daily",
+  "window": { "start": "00:07", "end": "00:08" },
+  "date": null,
+  "weekday": null,
+  "dataDir": "data",
+  "timezone": "Europe/Berlin",
+  "disableAfterDelete": false,
+  "secureWipe": true,
+  "recoveryPinHash": "(bcrypt-Hash der Recovery-PIN — wird beim Setup gesetzt)",
+  "notifyEmail": null,
+  "cronToken": "(zufälliges Geheimnis — wird beim Setup erzeugt)",
+  "adminPasswordHash": "(bcrypt-Hash des Admin-Passworts — wird beim Setup gesetzt)",
+  "armed": false,
+  "createdAt": null
+}

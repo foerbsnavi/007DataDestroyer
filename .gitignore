@@ -1,0 +1,18 @@
+# 007DataDestroyer — nicht versionieren:
+
+# Laufzeit-Zustand & Secrets (werden zur Laufzeit erzeugt)
+public/storage/config.json
+public/storage/state.json
+public/storage/destroyer.log
+public/storage/php_error.log
+public/storage/*.tmp*
+
+# Die zu löschenden Nutzdaten selbst — nur Schutzdateien behalten
+public/data/*
+!public/data/.htaccess
+!public/data/.gitkeep
+
+# Betriebssystem / Editor
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,13 @@
+# 007DataDestroyer — storage/ ist NICHT öffentlich.
+# Hier liegen config.json (Passwort-/PIN-Hash, cronToken), state.json und Logs.
+
+# Apache 2.4
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
