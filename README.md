@@ -1,8 +1,35 @@
-# 007DataDestroyer
+<div align="center">
 
-**Ein „Dead Man's Switch" für ein Web-Verzeichnis.**
-Der Inhalt eines Datenordners wird automatisch und restlos gelöscht, **wenn** ein grüner
-Recovery-Knopf nicht innerhalb eines eingestellten Zeitfensters betätigt wurde.
+# 🟢 007DataDestroyer
+
+### Ein „Dead Man's Switch" für ein Web-Verzeichnis
+
+Der Inhalt eines Datenordners wird **automatisch und restlos gelöscht** —
+_außer_ der grüne Recovery-Knopf wird rechtzeitig gedrückt.
+
+![Status](https://img.shields.io/badge/status-stabil-12d67a?style=flat-square)
+![PHP](https://img.shields.io/badge/PHP-7.4%2B-8892bf?style=flat-square)
+![Kein Framework](https://img.shields.io/badge/dependencies-keine-06536c?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-ea6b17?style=flat-square)
+
+</div>
+
+---
+
+```
+        ┌─────────────────────┐        drückt PIN + grünen Knopf
+        │   recover.php  🟢    │  ◀───────────────────────────────  du
+        │  (öffentlich, PIN)   │        im Zeitfenster
+        └──────────┬──────────┘
+                   │ bestätigt Fenster
+                   ▼
+   ┌───────────────────────────┐        Fenster verpasst?
+   │   cron.php  (Wächter)  ⏱   │ ─────────────────────────────▶  💥  data/ wird
+   │   + Lazy-Check-Fallback    │        keine Bestätigung          restlos gelöscht
+   └───────────────────────────┘
+```
+
+Der grüne Knopf kann **nur vor Löschung schützen, nie eine auslösen.**
 
 ---
 
