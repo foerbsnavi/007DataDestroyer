@@ -16,3 +16,8 @@ public/data/*
 .DS_Store
 Thumbs.db
 *.swp
+
+# Interne Arbeitsdokumente — gehoeren nicht ins oeffentliche Repo
+# (Hausregel: alle uebrigen 10 Repos halten sie ebenfalls draussen)
+007datadestroyer_funktionen.txt
+*_design.md
